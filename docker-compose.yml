@@ -10,10 +10,10 @@ services:
             - "9001:9001"
         command: server /data --console-address ':9001' --address ':9000'
         environment:
-            - MINIO_ROOT_USER=${AWS_ACCESS_KEY_ID}
-            - MINIO_ROOT_PASSWORD=${AWS_SECRET_ACCESS_KEY}
+            - MINIO_ROOT_USER=miniouser
+            - MINIO_ROOT_PASSWORD=miniopassword123
         volumes:
-            - minio_data:/data
+            - /volume1/docker/minio_data:/data
 
     mc:
         image: minio/mc@sha256:d281c2bfce56c727dc229643f8df99e24295fae586aaf6acb859eb2dd4c66ca4
@@ -25,7 +25,7 @@ services:
         entrypoint: >
             /bin/sh -c "
             /tmp/wait-for-it.sh minio:9000 &&
-            /usr/bin/mc alias set minio http://minio:9000 ${AWS_ACCESS_KEY_ID} ${AWS_SECRET_ACCESS_KEY} &&
+            /usr/bin/mc alias set minio http://minio:9000 miniouser miniopassword123 &&
             /usr/bin/mc mb minio/mlflow;
             exit 0;
             "
@@ -39,12 +39,12 @@ services:
         ports:
             - "3306:3306"
         environment:
-            - MYSQL_DATABASE=${MYSQL_DATABASE}
-            - MYSQL_USER=${MYSQL_USER}
-            - MYSQL_PASSWORD=${MYSQL_PASSWORD}
-            - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+            - MYSQL_DATABASE=mlflow
+            - MYSQL_USER=mlflow
+            - MYSQL_PASSWORD=P3nguin888!
+            - MYSQL_ROOT_PASSWORD=P3nguin888!
         volumes:
-            - dbdata:/var/lib/mysql
+            - /volume1/docker/mysql:/var/lib/mysql
 
     web:
         restart: always
@@ -55,13 +55,10 @@ services:
             - mc
             - db
         ports:
-            - "5000:5000"
+            - "5001:5000"
         environment:
             - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
-            - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-            - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-        command: mlflow server --backend-store-uri mysql+pymysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE} --default-artifact-root s3://mlflow/ --host 0.0.0.0
+            - AWS_ACCESS_KEY_ID=miniouser
+            - AWS_SECRET_ACCESS_KEY=miniopassword123
+        command: mlflow server --backend-store-uri mysql+pymysql://mlflow:P3nguin888!@db:3306/mlflow --default-artifact-root s3://mlflow/ --host 0.0.0.0
 
-volumes:
-    dbdata:
-    minio_data:
